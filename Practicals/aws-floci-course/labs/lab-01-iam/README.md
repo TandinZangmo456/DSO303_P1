@@ -1,25 +1,4 @@
-# Practical Laboratory Report
-
-**Lab 1 — Identity and Access Management (IAM)**  
-**University Student Management System (USMS) Cloud Infrastructure Project**
-
-- **University:** Royal University of Bhutan
-- **College:** College of Science and Technology, Phuentsholing
-- **Department:** Department of Software Engineering
-- **Course:** SWS304 — Advanced Web Attacks & Exploitations / Cloud Infrastructure Practical
-- **Student Name:** Tangmo
-- **Environment:** AWS CLI v2 against Floci (local AWS emulator)
-- **Date Submitted:** 21 August 2026
-
----
-
-ROYAL UNIVERSITY OF BHUTAN
-
-COLLEGE OF SCIENCE AND TECHNOLOGY, PHUENTSHOLING
-
-DEPARTMENT OF SOFTWARE ENGINEERING
-
-PRACTICAL LABORATORY REPORT
+# Practical Report
 
 # Lab 1 — Identity and Access Management (IAM)
 
@@ -27,13 +6,11 @@ University Student Management System (USMS) Cloud Infrastructure Project
 
 1. Aim / Objective
 
-To create and manage AWS Identity and Access Management (IAM) resources — including users, groups, customer-managed and inline policies, and roles — using the AWS CLI against a local AWS emulator (Floci), and to verify that access permissions, policy versioning, and secure credential handling were configured correctly, as the identity foundation for the University Student Management System (USMS) cloud infrastructure project.
+The main objective of this practical is to create and manage AWS IAM(identity and access management) resources containing users, groups, customer managed and inlined policies and roles by using AWS CLI in comparison to Floci which is a local AWS emulator and then verify the access rights, policy versions and check if secure credential management is correctly configured.
 
 2. Introduction
 
-AWS Identity and Access Management (IAM) is the AWS service that controls who can sign in (authentication) and what they're allowed to do once they're in (authorization). It's built around four main pieces: users, which are individual identities with permanent login credentials; groups, which bundle permissions together so you don't have to manage them per person; roles, which are identities with temporary credentials that get assumed by a service or a trusted person rather than logged into directly; and policies, which are just JSON documents that say Allow or Deny for a given action on a given resource. One thing that surprised me is that IAM itself doesn't cost anything to use, even though it's arguably the most important service in the whole account from a security standpoint — get IAM wrong and nothing else you build is actually safe.
-
-In this lab specifically, I worked with user/group management, customer-managed and inline policies, policy versioning, role trust policies, instance profiles, and temporary credentials through STS (the Security Token Service). The big idea underpinning all of it is the Principle of Least Privilege — every identity, whether it's a person or a piece of software, should only be able to do the bare minimum it actually needs. In practice this is what stops a compromised Lambda function or a careless developer from accidentally (or maliciously) touching things they had no business touching. IAM shows up everywhere in real cloud setups: giving different teams different levels of access, letting an EC2 instance or Lambda function reach into a specific S3 bucket without a hardcoded key sitting in the code, or granting a partner organisation short-lived access without ever handing over a permanent credential.
+AWS IAM is an AWS service that is mainly used for establishing access rules for AWS resources which shows us who can access it and what actions are allowed. IAM works with four components which are users, groups, roles and policies. Users are individual persons with permanent and long time credentials like passwords while groups are collections of users where we attach permission so that all users in it can have the same access. Roles are like temporary identities without permanent credentials with short term tasks. Policies are like a document of JSON which defines rules and tells what actions are allowed and rejected. The most important concept of IAM is the principle of least privilege which means that access should be given only when it is mostly needed. This is important because if there is too much access then it can create security issues.
 
 3. Use Case
 
