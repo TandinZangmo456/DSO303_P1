@@ -14,93 +14,78 @@ AWS IAM is an AWS service that is mainly used for establishing access rules for 
 
 3. Use Case
 
-This lab is the first in a series building out the cloud infrastructure for the University Student Management System (USMS) — a web app that stores student records, handles transcript uploads, sends enrolment notifications, and generates reports for the College of Science and Technology. The scenario puts me in the role of a junior cloud engineer, and this particular lab was about laying down the identity model everything else in the project will sit on top of:
+This lab is connected to other labs which design the cloud infrastructure of the Student Management System (USMS) software program that collects information about students, provides updates on enrollment, and enables the uploading documents. I hold the position of a junior cloud engineer at this lab and my job is to develop the identity model. Everything else will be developed on the basis of this model.
 
-usms-admins group — the lead cloud engineer, broad course-scoped permissions.
+| Identity | Type | Represents | Permission level |
+|---|---|---|---|
+| `usms-admins` | Group | Lead cloud engineer | Broad, course-scoped permissions |
+| `usms-developers` | Group | Developers building USMS infrastructure | Read access + scoped VPC/EC2 build permissions for later labs |
+| `usms-auditors` | Group | University auditor | Read-only access, everywhere |
+| `usms-ec2-app-role` | Role | USMS application server (EC2) | Read/write student data in S3 |
+| `usms-lambda-exec-role` | Role | Notification functions (Lambda) | Logging and messaging |
+| `usms-developer-role` | Role | Temporarily assumed by developers | Elevated, time-boxed build permissions |
 
-usms-developers group — developers building USMS infrastructure (read access plus scoped VPC/EC2 build permissions for later labs).
+This is actually how companies function: they give access not to the person but to their role and group. Therefore, it can be done by clicking rather than going through the entire process.
 
-usms-auditors group — the university auditor, read-only access everywhere.
+4. Implementation Procedure
 
-usms-ec2-app-role — assumed by the USMS application server (EC2) to read/write student data in S3.
-
-usms-lambda-exec-role — assumed by notification functions (Lambda) for logging and messaging.
-
-usms-developer-role — assumed temporarily by developers for elevated, time-boxed build permissions.
-
-This is basically how real companies handle it too — permissions go on groups and roles, not on individual people, so that adding a new hire or taking away someone's access is a one-line change instead of a scramble. Doing it this way from the start keeps the whole USMS project honest about least privilege as it grows.
-
-4. System Architecture / Design
-
-Everything for this lab ran locally on my own machine rather than a real AWS account. I set up the AWS CLI with a named profile called "floci", and pointed its endpoint_url at a Floci container — an open-source local AWS emulator — running through Docker Compose with hybrid (durable) storage bound to a folder on my host disk. The nice thing about this setup is that every IAM command behaves exactly like it would against real AWS, but all the users, groups, policies, and roles I create actually stick around on disk between container restarts, and none of it costs anything or touches a real account.
-
-AWS CLI (profile "floci", endpoint_url -> localhost:4566)
-
-|
-
-v
-
-Docker container "floci"  (FLOCI_STORAGE_MODE = hybrid)
-
-|  bind mount
-
-v
-
-~/floci-data  (host disk -- IAM users, groups, policies, roles stored as JSON)
-
-Inside IAM, the flow looks roughly like this: users get placed into groups, groups have policies attached to them (either ones I wrote or AWS's built-in ones), roles have two separate documents — a trust policy deciding who's even allowed to become that role, and a permissions policy deciding what they can do once they are — and any role meant for an EC2 instance gets wrapped in something called an instance profile before it can actually be attached.
-
-5. Implementation Procedure
-
-I split the work into two parts — getting the environment running first, then actually building out the IAM resources on top of it.
+There is 2 parks for this lab:
 
 ### Part A — Environment Bootstrap
 
-Verified Docker and Docker Compose v2 were installed and the daemon was reachable; ran a hello-world container as a smoke test.
+Step 1: Before creating my environment, I confirmed that I installed the required components of Docker and Docker Compose v2. To do this, I created and ran a `hello-world` container, confirming the good condition of the components.
 
-Installed the Floci CLI and ran floci doctor to confirm Docker, image availability, and port 4566 were ready.
+Step 2: When I installed the Floci CLI, I ran the command `floci doctor`, so that I could check the Docker operation, its emulator image existence, and the availability of port 4566.
 
-Created the project directory structure (labs/, policies/, configs/, scripts/, outputs/, templates/) before starting any service.
+Step 3: I constructed the project directory according to the layout as `labs/`, `policies/`, `configs/`, `scripts/`, `outputs/`, `templates/`, hence organizing the project files properly.
 
-Wrote .gitignore (using the outputs/* form, not outputs/, so secrets could never be committed) and initialised Git, committing the ignore rules as the very first commit before any credential existed.
+Step 4: With the aim to obstruct secrets from reaching Git after they have been expelled, I made sure that rules of the `.gitignore` file were written in the form of `outputs/*`, before making the first commit in the repository.
 
-Proved the ignore rules worked by creating a fake secret file and confirming git status and git check-ignore correctly blocked it.
+Step 5: I made sure that the rules worked successfully by creating a secret file and inspecting it with the commands `git status` and `git check-ignore`.
 
-Wrote configs/course.env and docker-compose.yml, pinning FLOCI_STORAGE_MODE=hybrid and an absolute host bind mount for /app/data, then brought Floci up via a self-verifying floci-up.sh script.
+Step 6: I created the files `configs/course.env` and `docker-compose.yml`, setting the variable `FLOCI_STORAGE_MODE=hybrid` and establishing an absolute host bind mount at `/app/data`, then I launched Floci through a self-verifying script, the file `floci-up.sh`.
 
-Installed AWS CLI v2 and created a named profile ("floci") with endpoint_url pointed at http://localhost:4566.
 
-Proved isolation from real AWS three ways: account number 000000000000, --debug output showing the request URL was localhost:4566, and confirming the CLI failed once Floci was stopped.
+Step 7: I installed the AWS CLI version 2 and set up a named profile `"floci"` with the `endpoint_url` set to `http://localhost:4566`.
 
-Proved persistence: created a real IAM user, fully restarted the Floci container, and confirmed the user still existed afterwards — the single test that distinguishes real durability from a coincidence of a constant root ARN.
+
+Step 8: I verified the isolation from the real Amazon AWS platform in three different ways — I got the account number as `000000000000`, the output of the `--debug` command showed that the request was sent to the address `localhost:4566`, and the AWS CLI showed that it does not work at all when Floci is switched off.
+
+
+Step 9: I demonstrated the persistence feature by creating a normal IAM user which stayed there after full restart of Floci container — this is the only test that shows that the data is still there instead of the continuous root ARN that everybody assumes to exist.
+
 
 ### Part B — IAM Foundation for USMS
 
-Created three IAM groups: usms-admins, usms-developers, usms-auditors.
+Step 1: The first stage was to set up three IAM groups, which are named `usms-admins`, `usms-developers`, and `usms-auditors`.
 
-Created three IAM users (usms-admin-01, usms-dev-01, usms-audit-01), each tagged with Project and Role, and added each to its matching group — verified membership from both directions (group→users and user→groups).
 
-Attached the AWS-managed ReadOnlyAccess policy to usms-auditors.
+Step 2: The next step was to create three users under IAM (`usms-admin-01`, `usms-dev-01`, `usms-audit-01`), tag each of them with their Project and Role, and assign them correctly to their groups – then cross-verified the groups and users.
 
-Authored a customer-managed policy, USMSDeveloperBase, with three statements: broad read access to infrastructure, scoped VPC/EC2 build permissions for the next lab (region-restricted via a Condition), and an explicit Deny guardrail blocking dangerous identity-escalation actions (e.g. iam:CreateUser) — attached to both usms-developers and usms-admins.
 
-Authored USMSStudentDataReadWrite, correctly distinguishing the bucket-level ARN (for s3:ListBucket) from the object-level ARN with a trailing /* (for s3:GetObject/PutObject/DeleteObject), with an explicit Deny on ever deleting the bucket.
+Step 3: Then I assigned the policy `ReadOnlyAccess` from AWS to the group of `usms-auditors`.
 
-Added an inline policy, USMSSelfManageCredentials, directly on usms-dev-01, using the IAM policy variable ${aws:username} so the same document scopes correctly to whichever user it is attached to.
 
-Created three IAM roles with separate trust and permissions policies: usms-ec2-app-role (trusted by ec2.amazonaws.com, wrapped in an instance profile), usms-lambda-exec-role (trusted by lambda.amazonaws.com), and usms-developer-role (trusted by a specific IAM user, assumed via STS for temporary, one-hour credentials).
+Step 4: After that I composed a custom policy named `USMSDeveloperBase, that contained three statements, which gave permission to view infrastructure information, added a condition in a statement to restrict use of VPC/EC2 build permissions to a region and put a restriction statement to protect IAM from the use of `iam:CreateUser` call.
 
-Created an access key for usms-dev-01, redirected straight to a git-ignored file with 600 permissions, and built a second CLI profile ("usms-dev") from it.
 
-Ran the IAM policy simulator (simulate-principal-policy) to test explicit-deny, implicit-deny, and allow outcomes against usms-dev-01.
+Step 5: Finally, I composed the `USMSStudentDataReadWrite` permission policy, which provided the right level of detail in specifying ARNs to allow the policy to perform `s3:ListBucket` and `s3:GetObject` /`PutObject` / `DeleteObject` actions.
 
-Generated configs/lab-01.env containing every ARN required by later labs, wrote lab notes, and ran a 27-point end-to-end verification script confirming the entire environment, IAM foundation, and Git hygiene.
+Step 6: I inserted a policy that has been specified, `USMSSelfManageCredentials`, on `usms-dev-01` by incorporating the IAM variable of policy `${aws:username}` so as to make the document applicable for whomever is using it as per their user name.
+
+Step 7: I have formed three IAM roles so that each of them possesses its own separate policies - `usms-ec2-app-role`(which is trusted by the `ec2.amazonaws.com` domain and is surrounded by an instance profile), `usms-lambda-exec-role`(which is trusted by `lambda.amazonaws.com`) and `usms-developer-role`(which is being trusted by an IAM user and assumed through STS for just one hour).
+
+Step 8: I established a new access key of `usms-dev-01` which has been redirected directly to a file that has been ignored by git and has granted permissions of value `600`, just for the purpose of creating a second CLI profile called `usms-dev`.
+
+Step 9: Using the IAM policy simulator (`simulate-principal-policy`), tested for explicit denies, implicit denies, and allowed outcomes on `usms-dev-01`.
+
+Step 10: Created `configs/lab-01.env`, which has ARNs needed for the upcoming labs, compiled lab notes, and executed 27 checks to ensure the entire environment, its IAM base, and Git are in good shape.
 
 6. Results and Evidence
 
 ### 6.1 CLI / SDK Output
 
-The following screenshots capture the AWS CLI commands executed and their outputs at key stages of the practical.
+The screenshots given below are the AWS CLI commands executed and their outputs at key stages of the practical.
 
 
 ![alt text](<../../screenshots/Screenshot from 2026-08-21 01-19-09.png>)
@@ -152,13 +137,13 @@ The following screenshots capture the AWS CLI commands executed and their output
 
 ### 6.2 AWS Management Console Verification
 
-This practical was carried out entirely through the AWS CLI against Floci, a local emulator with no graphical web console. Floci does not provide an AWS Management Console equivalent — it is a CLI/API-only emulator by design, as documented in the lab's "Floci vs Real AWS" comparison. Console-equivalent verification was therefore performed using the AWS CLI's own inspection commands, which return the same JSON representations the real AWS Console would display: aws iam get-group, aws iam get-user, aws iam list-attached-group-policies, aws iam get-role, and aws iam get-instance-profile (see Figures 6–10 above). In a real AWS account, the same resources — IAM Users, Groups, Roles, and attached Policies — would appear identically under the IAM service dashboard in the AWS Management Console.
+The entire practical was done through the AWS CLI against Floci, which is a local emulator without a graphic web console. Floci is not equipped with the equivalent of AWS Management Console, being a CLI/API-only emulator by design, as explained in the lab’s “Floci vs Real AWS” section. Therefore, the console equivalent verification is conducted through the AWS CLI inspection commands yielding the same output in terms of the format (JSON) as the real AWS Management Console would have, including commands such as: aws iam get-group, aws iam get-user, aws iam list-attached-group-policies, aws iam get-role, or aws iam get-instance-profile (see Figures 6-10). In a real AWS account, the same resources such as IAM Users, Groups, Roles, and attached Policies would have appeared in the same way in the AWS Management Console in the IAM service section.
 
 7. Analysis and Discussion
 
 By the end of the lab I had the full IAM foundation in place for USMS: three groups, three users tagged and dropped into the right groups, five customer-managed policies plus one AWS-managed and one inline policy, three roles each with its trust and permissions documents kept properly separate, an instance profile, and two working CLI profiles for switching between the root and developer identities. I wrote a small verification script at the end that ran 27 checks across all of this, and it came back all green. Git history shows six commits, with the .gitignore commit sitting right at the very start — before I'd created a single secret — which was the whole point of doing it in that order.
 
-Pretty much everything matched what I expected, except for one thing that tripped me up during the policy simulator test in Step 32. I ran aws iam simulate-principal-policy against usms-dev-01 for ec2:CreateVpc, expecting it to say allowed since that permission comes from the USMSDeveloperBase policy attached to the usms-developers group. Instead it came back implicitDeny. At first I assumed I'd messed up the policy somewhere, but after double-checking with list-attached-group-policies and confirming the group really did have the right policy attached, I realised the issue was on Floci's side — its simulator seems to only check policies attached directly to whichever principal you name, and doesn't trace permissions that come in through group membership the way real AWS does. So I noted it as a Floci limitation rather than going down a rabbit hole trying to "fix" a policy that was already correct.
+Pretty much everything matched what I expected, except for one thing that tripped me up during the policy simulator test in Step 32. I ran aws iam simulate-principal-policy against usms-dev-01 for ec2:CreateVpc, expecting it to say allowed  since that permission comes from the USMSDeveloperBase policy attached to the usms-developers group. Instead it came back implicitDeny. At first I assumed I'd messed up the policy somewhere, but after double-checking with list-attached-group-policies and confirming the group really did have the right policy attached, I realised the issue was on Floci's side — its simulator seems to only check policies attached directly to whichever principal you name, and doesn't trace permissions that come in through group membership the way real AWS does. So I noted it as a Floci limitation rather than going down a rabbit hole trying to "fix" a policy that was already correct.
 
 A smaller hiccup came up in Exercise 3, where I tried setting --max-session-duration to 1800 seconds (30 minutes) for the analytics partner role and got a parameter validation error straight away. Turns out IAM enforces a minimum of 3600 seconds for that setting, on real AWS and apparently on Floci too — I hadn't expected the emulator to enforce that particular limit given how loose it is about everything else. I fixed it by leaving the role's ceiling at 3600 and instead passing --duration-seconds 1800 directly to the assume-role call, which worked fine since it's well under the ceiling. It was actually a useful mistake to make, because it made the distinction between a role's maximum allowed session and the session actually requested a lot clearer to me than just reading about it would have.
 
