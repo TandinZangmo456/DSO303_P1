@@ -141,7 +141,27 @@ The entire practical was done through the AWS CLI against Floci, which is a loca
 
 7. Analysis and Discussion
 
-By the end of the lab I had the full IAM foundation in place for USMS: three groups, three users tagged and dropped into the right groups, five customer-managed policies plus one AWS-managed and one inline policy, three roles each with its trust and permissions documents kept properly separate, an instance profile, and two working CLI profiles for switching between the root and developer identities. I wrote a small verification script at the end that ran 27 checks across all of this, and it came back all green. Git history shows six commits, with the .gitignore commit sitting right at the very start — before I'd created a single secret — which was the whole point of doing it in that order.
+    1. What was achieved
+    
+    In the end, I was able to complete the entire IAM setup of USMS successfully, which included three groups, three users categorized into relevant groups, five customer-managed policies along with both AWS-managed and inline policies, three roles with their trust and permission documents isolated, an instance profile and two CLI profiles helping to switch between root and developer identities. Following that, I wrote a short script for checking everything and all 27 checks were carried out successfully. The git history shows six commits at the end; the .gitignore commit being the very first one which makes sense as no secrets have been created at that point in time.
+
+    2. Did the results match what I expected?
+
+    Yes it matches for some but one thing that caused my confusion. In step 32, I executed aws iam simulate-principal-policy for usms-dev-01 and ec2:CreateVpc and expected it to return allowed as that permission comes from USMSBowlerBase policy attached to usms-developers group. Instead, I received an implicitDeny error. Everything else was correct.
+
+
+    3. Did you encounter any mistakes?
+
+    Two. The above simulator error and another smaller one in Exercise 3 when I tried to set --max-session-duration of 1800 seconds to analytics partner role and it resulted in parameter validation error.
+
+    4. How did I fix them?
+
+
+    What did I notice while doing all this?
+
+    The main point is that Floci does not enforce IAM quite like it is supposed to in real AWS. It accepts pretty much any credentials and does not prevent you from doing something that should be forbidden by a properly constrained policy. The above simulator example demonstrates my point well. Thus, having a command that works does not mean that the underlying policy is correct. I have checked the JSON myself, especially the bucket-vs-object ARN thing from step 23, and thought through the explicit-deny-wins principle on my own rather than trusting the running code.
+    
+
 
 Pretty much everything matched what I expected, except for one thing that tripped me up during the policy simulator test in Step 32. I ran aws iam simulate-principal-policy against usms-dev-01 for ec2:CreateVpc, expecting it to say allowed  since that permission comes from the USMSDeveloperBase policy attached to the usms-developers group. Instead it came back implicitDeny. At first I assumed I'd messed up the policy somewhere, but after double-checking with list-attached-group-policies and confirming the group really did have the right policy attached, I realised the issue was on Floci's side — its simulator seems to only check policies attached directly to whichever principal you name, and doesn't trace permissions that come in through group membership the way real AWS does. So I noted it as a Floci limitation rather than going down a rabbit hole trying to "fix" a policy that was already correct.
 
