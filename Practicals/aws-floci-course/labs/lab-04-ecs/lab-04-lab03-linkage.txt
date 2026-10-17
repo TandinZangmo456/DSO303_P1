@@ -1,0 +1,52 @@
+Lab 04 / Lab 03 linkage - generated 2026-10-17T17:18:34Z
+
+enrolment security group : sg-a48d93b11154939dc
+source group (inbound)   : sg-016aeadf128a2fb06
+source group read from   : policies/usms-enrolment-sg-ingress.json (API returned no source group: Floci limitation)
+resolves to instance(s)  : i-7d102245bea4dde6d
+USMS_WEB_INSTANCE (Lab 3): i-7d102245bea4dde6d
+VERDICT                  : LOOP CLOSED
+
+Method note: the server-side filter Name=instance.group-id returned three instances (usms-web-01, usms-db-01, usms-db-02), so this Floci build ignores that filter. The verdict above comes from a client-side check of each running instance's SecurityGroups against the source group, which returns only usms-web-01. usms-db-01 and usms-db-02 carry usms-db-sg, not usms-app-sg.
+
+NOTE: this rule is temporary. Lab 05 removes it once the load balancer becomes the only caller of the enrolment service.
+
+== ECS tag audit (Project=USMS) ==
+-- cluster
+{
+    "tags": [
+        {
+            "key": "Project",
+            "value": "USMS"
+        },
+        {
+            "key": "Tier",
+            "value": "app"
+        },
+        {
+            "key": "Name",
+            "value": "usms-ecs-cluster"
+        }
+    ]
+}
+-- service
+{
+    "tags": [
+        {
+            "key": "Project",
+            "value": "USMS"
+        },
+        {
+            "key": "Tier",
+            "value": "app"
+        },
+        {
+            "key": "Lab",
+            "value": "04"
+        },
+        {
+            "key": "Name",
+            "value": "usms-enrolment-svc"
+        }
+    ]
+}

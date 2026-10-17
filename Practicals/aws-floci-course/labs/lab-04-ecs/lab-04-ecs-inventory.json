@@ -1,0 +1,18 @@
+[
+  {
+    "service": "usms-enrolment-svc",
+    "desired": "2",
+    "running": "2",
+    "taskdef": "usms-enrolment:2",
+    "roles": "SEPARATE",
+    "publicip": "OK"
+  },
+  {
+    "service": "usms-results-svc",
+    "desired": "1",
+    "running": "1",
+    "taskdef": "usms-enrolment",
+    "roles": "SEPARATE",
+    "publicip": "OK"
+  }
+]
