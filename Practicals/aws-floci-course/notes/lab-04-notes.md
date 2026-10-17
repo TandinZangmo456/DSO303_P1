@@ -13,3 +13,36 @@ Lab 04 Step 11 limitation: describe-services returns no events (events[0:3] is n
 
 
 Lab 04 verify-lab-04.sh result: PASS=36 FAIL=2. (1) 'usms-enrolment-sg is sourced from usms-app-sg' fails because Floci does not store or return UserIdGroupPairs (see Step 8 limitation). (2) 'no secret is tracked by git' fails only because outputs/.gitkeep is tracked and matches the script's '^outputs/' pattern; no secret is tracked.
+
+
+# Review Questions
+
+## 1. "I put auto scaling on the task definition"
+(Say what it attaches to in Lab 06, what it modifies, which of the four objects makes reality match, and what ECS itself knows about the scalable target.)
+
+ANSWER:
+
+## 2. The same policy on EC2 and on a Fargate task
+(Explain what the instance profile and the task role each do at runtime, why neither needs a key on disk, and what changes for both when the bucket exists at that ARN. This is the most important question.)
+
+ANSWER:
+
+## 3. Execution role versus task role
+(One failure symptom for each, and why the trust policy is identical.)
+
+ANSWER:
+
+## 4. Group reference versus CIDR
+(Why it is correct even with a fixed task count, and the extra reason it is close to mandatory once Lab 06 changes the count.)
+
+ANSWER:
+
+## 5. What Fargate removes and what it does not
+(Use the task's own security group and Lab 2's route tables to make the second half concrete.)
+
+ANSWER:
+
+## 6. Memory mode versus hybrid mode
+(Name one command that would look identical in both modes and one that would not, and explain the difference.)
+
+ANSWER:
