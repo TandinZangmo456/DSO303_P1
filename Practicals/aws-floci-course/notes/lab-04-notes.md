@@ -18,31 +18,19 @@ Lab 04 verify-lab-04.sh result: PASS=36 FAIL=2. (1) 'usms-enrolment-sg is source
 # Review Questions
 
 ## 1. "I put auto scaling on the task definition"
-(Say what it attaches to in Lab 06, what it modifies, which of the four objects makes reality match, and what ECS itself knows about the scalable target.)
-
-ANSWER:
+That sentence is wrong in three ways. Auto scaling does not attach to the task definition, which is an immutable blueprint that can only be replaced by a new revision. In Lab 06 it attaches to the service, as a scalable target with the resource ID `service/usms-ecs-cluster/usms-enrolment-svc` (the suffix of the service ARN from Step 10). What it modifies is a single number, the service's `desiredCount`, and nothing else. The service is the object that makes reality match: it is a controller that starts or stops tasks until `runningCount` equals `desiredCount`. The observable consequence of ECS knowing nothing about the scalable target is that `describe-services` shows no sign of it. A scaling action looks exactly like someone ran `update-service`, and the scalable target only appears in `aws application-autoscaling` commands. It also means deleting the service leaves the scalable target behind, which is why Lab 06's cleanup has to run before Lab 04's.
 
 ## 2. The same policy on EC2 and on a Fargate task
-(Explain what the instance profile and the task role each do at runtime, why neither needs a key on disk, and what changes for both when the bucket exists at that ARN. This is the most important question.)
-
-ANSWER:
+`USMSStudentDataReadWrite` is attached to both `usms-ec2-app-role` and `usms-ecs-task-role`. On EC2, the instance profile is the wrapper that attaches the role to the instance. Code on the instance asks the instance metadata service and gets temporary credentials for that role from STS. On Fargate, ECS injects `AWS_CONTAINER_CREDENTIALS_RELATIVE_URI` into the container, and the AWS SDK uses it to fetch temporary credentials for the task role from a link-local endpoint. Neither needs a key on disk because the credentials are issued on demand to whatever the role's trust policy allows (`ec2.amazonaws.com` or `ecs-tasks.amazonaws.com`). They are short-lived and rotate automatically, so there is nothing long-lived to leak or commit. The policy names `arn:aws:s3:::usms-student-data`, a bucket that does not exist yet. Permissions are evaluated against the resource ARN at request time, so the moment Lab 10 runs `create-bucket`, both chains (instance, instance profile, role, policy, bucket and task, task role, policy, bucket) start working at the same instant, and neither role or policy has to change. On Floci the task's credentials endpoint is not served, so I could only observe the chain through `describe-task-definition` and `iam get-role`, not a running call.
 
 ## 3. Execution role versus task role
-(One failure symptom for each, and why the trust policy is identical.)
-
-ANSWER:
+If the execution role is missing or wrong, the task never starts, and `stoppedReason` mentions the image pull or the log stream. If the task role is missing or wrong, the task starts fine and then the application gets AccessDenied at runtime. Both roles share one trust policy because the trust policy only says who may assume the role, and in both cases that is the same service principal, `ecs-tasks.amazonaws.com`. What differs is who actually assumes each role and when: ECS uses the execution role before my container exists, and my application code uses the task role while it is running. The permissions attached to each role are what make them different.
 
 ## 4. Group reference versus CIDR
-(Why it is correct even with a fixed task count, and the extra reason it is close to mandatory once Lab 06 changes the count.)
-
-ANSWER:
+A group reference is correct even with a fixed task count because it states the intent (the web tier may call this service) rather than a location. A CIDR such as 10.0.1.0/24 would admit anything that ever lands in that subnet, including resources that have nothing to do with the web tier, and it would silently go wrong if the web tier moved. The group reference follows the members of `usms-app-sg` wherever they are. Once Lab 06 lets the task count change on its own, it becomes close to mandatory. Tasks are created and destroyed constantly, each with its own network interface and a new private address, so any rule that has to name the tasks by address would be out of date after every scaling event. A rule that names a group still holds, because new tasks join the group automatically. (On Floci the stored rule did not return its source group, so my evidence is the ingress document naming `sg-016aeadf128a2fb06`, not the API.)
 
 ## 5. What Fargate removes and what it does not
-(Use the task's own security group and Lab 2's route tables to make the second half concrete.)
-
-ANSWER:
+Fargate removes the EC2 instances: no AMI, no patching, no ECS agent to maintain, no fleet to size, and no paying for idle hosts. I only state CPU and memory per task (256 / 512). It does not remove any of the networking from Lab 2. In `awsvpc` mode each task gets its own network interface in my private subnet, with my security group `usms-enrolment-sg`, and it obeys my route tables exactly like an instance. The tasks sit in private subnets with `assignPublicIp` DISABLED, so pulling the container image depends on `usms-private-rt` sending 0.0.0.0/0 to `usms-nat`, plus the S3 endpoint for layer data. If the NAT route were wrong, the service would create successfully and every task would fail with an image-pull timeout, far from the cause. I also still own the IAM roles, the log group and the sizing decisions.
 
 ## 6. Memory mode versus hybrid mode
-(Name one command that would look identical in both modes and one that would not, and explain the difference.)
-
-ANSWER:
+`aws sts get-caller-identity` (or `whoami.sh`) looks identical in both modes, because the account identity is a constant, always the root ARN of account 000000000000, and is not stored state, so seeing it after a restart proves nothing about persistence. A command that would not look identical is `aws ecs describe-services --cluster usms-ecs-cluster --services usms-enrolment-svc` after stopping and restarting Floci. In hybrid mode the service, cluster and task definitions are still there. In memory mode they are gone, and the call returns an empty result or a not-found error. The difference is that identity is a constant, while the cluster and service are resources whose existence has to be written to disk to survive a restart.
