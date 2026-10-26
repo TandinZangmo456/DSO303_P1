@@ -1,0 +1,7 @@
+[
+  {
+    "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/usms-enrolment-tg/b7e6d71e05bd4136",
+    "containerName": "enrolment-api",
+    "containerPort": 80
+  }
+]
