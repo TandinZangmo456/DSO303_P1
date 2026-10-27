@@ -1,0 +1,10 @@
+{
+  "TargetValue": 1000.0,
+  "PredefinedMetricSpecification": {
+    "PredefinedMetricType": "ALBRequestCountPerTarget",
+    "ResourceLabel": "app/usms-enrolment-alb/35b54c8749d043bd/targetgroup/usms-enrolment-tg/b7e6d71e05bd4136"
+  },
+  "ScaleOutCooldown": 60,
+  "ScaleInCooldown": 300,
+  "DisableScaleIn": false
+}
