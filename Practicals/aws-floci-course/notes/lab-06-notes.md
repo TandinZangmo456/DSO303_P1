@@ -12,3 +12,4 @@ Resource ID derived correctly: service/usms-ecs-cluster/usms-enrolment-svc
 Step 12: fallback proof (path C). Chain proven only for blocks 1, 4, 6. Missing link: no step policy
 exists (Application Auto Scaling unsupported), so AlarmActions is empty and desiredCount stayed 2.
 On real AWS: alarm ALARM -> step policy -> breach 160 selects +3 -> desiredCount 2 -> 5.
+- verify check 'no secret is tracked by git' fails on outputs/.gitkeep too, so .gitkeep is kept untracked (conflicts with Step 17's expectation)
