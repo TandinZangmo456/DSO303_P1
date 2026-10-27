@@ -9,3 +9,6 @@ Resource ID derived correctly: service/usms-ecs-cluster/usms-enrolment-svc
 - Step 11 (scheduled actions) and Step 13 (suspend/resume): not runnable, need Application Auto Scaling
 - Step 12 (path C): alarm usms-enrolment-queue-high set to ALARM with set-alarm-state; no action attached,
   so desiredCount did not and could not move. On real AWS AlarmActions = step policy ARN -> +1 task (queue 100-200).
+Step 12: fallback proof (path C). Chain proven only for blocks 1, 4, 6. Missing link: no step policy
+exists (Application Auto Scaling unsupported), so AlarmActions is empty and desiredCount stayed 2.
+On real AWS: alarm ALARM -> step policy -> breach 160 selects +3 -> desiredCount 2 -> 5.
