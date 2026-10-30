@@ -1,8 +1,5 @@
 # AWS Practical Laboratory Report
 ## Lab 02 — Virtual Private Cloud and Networking
-*Course: DSO303  |  Environment: Floci (local AWS CLI emulator)*
-
----
 
 ## 1. Aim / Objective
 
