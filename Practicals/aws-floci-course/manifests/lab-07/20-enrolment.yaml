@@ -49,6 +49,13 @@ spec:
         project: usms
         tier: app
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: usms-enrolment
       containers:
         - name: enrolment
           image: nginx:1.27-alpine

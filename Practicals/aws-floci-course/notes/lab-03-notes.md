@@ -89,3 +89,4 @@ It is adequate for proving the configuration: state running, subnet route to an 
 | IGW, NAT gateway, S3 endpoint, DNS settings that make those routes exist | VPC |
 
 Both are `t3.micro` from the same AMI, and the key pair is the same.
+- Floci limitation (Exercise 4): describe-nat-gateways returned EIP None for nat-d19ba80f9652d2955, and describe-instance-credit-specifications returned UnsupportedOperation.
