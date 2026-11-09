@@ -1,0 +1,9 @@
+[
+  {
+    "IpProtocol": "tcp", "FromPort": 80, "ToPort": 80,
+    "UserIdGroupPairs": [
+      { "GroupId": "sg-a48d93b11154939dc",
+        "Description": "HTTP to the enrolment tasks - the ONLY thing this load balancer may initiate" }
+    ]
+  }
+]

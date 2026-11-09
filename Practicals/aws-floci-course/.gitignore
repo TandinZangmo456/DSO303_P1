@@ -28,3 +28,7 @@ Thumbs.db
 *.swp
 .vscode/
 .idea/
+labs/lab-11-cicd/app/dist/
+labs/lab-11-cicd/app-results/dist/
+labs/lab-11-cicd/app/.smoke-rc
+docker-compose.yml.bak-*

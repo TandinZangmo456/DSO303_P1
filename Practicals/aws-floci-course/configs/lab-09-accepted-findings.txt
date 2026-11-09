@@ -1,0 +1,6 @@
+# Accepted IAM audit findings - read by scripts/utilities/usms-iam-audit.sh
+# Format: role|substring of the finding text|reason (one line, required)
+# A finding listed here is reported as ACCEPTED and does not count towards HIGH.
+usms-ec2-app-role|service principal ec2.amazonaws.com with NO Condition|EC2 does not send aws:SourceArn/aws:SourceAccount when it assumes an instance-profile role, so no confused-deputy condition can be written; the control is iam:PassRole scoping (USMSDeployBase denies passing anything to ec2).
+usms-eks-node-role|service principal ec2.amazonaws.com with NO Condition|Same as usms-ec2-app-role: EKS worker nodes assume this role through an EC2 instance profile, which carries no source context.
+usms-eks-cluster-role|service principal eks.amazonaws.com with NO Condition|Accepted until the cluster is recreated: adding aws:SourceArn needs the cluster ARN, and Floci's EKS cluster is rebuilt from templates after every restart, so the ARN-pinned trust would be rewritten each time.

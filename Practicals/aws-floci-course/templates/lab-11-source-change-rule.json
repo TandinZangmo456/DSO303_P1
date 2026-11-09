@@ -1,0 +1,11 @@
+{
+  "Name": "usms-enrolment-source-changed",
+  "Description": "Start usms-enrolment-pipeline when a new version of source/usms-enrolment-src.zip is written (CloudTrail data event)",
+  "State": "ENABLED",
+  "EventPattern": "{\"source\":[\"aws.s3\"],\"detail-type\":[\"AWS API Call via CloudTrail\"],\"detail\":{\"eventSource\":[\"s3.amazonaws.com\"],\"eventName\":[\"PutObject\",\"CompleteMultipartUpload\",\"CopyObject\"],\"requestParameters\":{\"bucketName\":[\"usms-pipeline-artifacts\"],\"key\":[\"source/usms-enrolment-src.zip\"]}}}",
+  "Tags": [
+    { "Key": "Project", "Value": "USMS" },
+    { "Key": "Tier", "Value": "pipeline" },
+    { "Key": "Lab", "Value": "11" }
+  ]
+}

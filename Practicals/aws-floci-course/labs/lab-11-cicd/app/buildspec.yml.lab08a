@@ -1,0 +1,90 @@
+version: 0.2
+
+env:
+  variables:
+    SERVICE_NAME: "enrolment"
+    ARTIFACT_DIR: "dist"
+
+phases:
+
+  install:
+    commands:
+      - echo "--- install ---"
+      - python3 --version
+      - sed --version 2>/dev/null | head -1 || echo "BSD sed"
+
+  pre_build:
+    commands:
+      - echo "--- pre_build ---"
+      - test -f VERSION || { echo "VERSION file is missing"; exit 1; }
+      - python3 -m json.tool config/service.json > /dev/null
+      - |
+        python3 -c '
+        import json, sys
+        cfg = json.load(open("config/service.json"))
+        for key, want in (("container", "enrolment-api"), ("port", 80)):
+            got = cfg.get(key)
+            if got != want:
+                sys.exit("config/service.json: %s is %r, expected %r - the task definition and target group use %r. Fix config/service.json and re-upload the source." % (key, got, want, want))
+        '
+      - echo "configuration validated"
+
+  build:
+    commands:
+      - echo "--- build ---"
+      - USMS_RELEASE="$(tr -d '[:space:]' < VERSION)"
+      - BUILT_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      - echo "release=$USMS_RELEASE builtAt=$BUILT_AT"
+      - rm -rf "$ARTIFACT_DIR"
+      - mkdir -p "$ARTIFACT_DIR"
+      - cp -R src/. "$ARTIFACT_DIR"/
+      - sed -i.bak -e "s|__RELEASE__|$USMS_RELEASE|g" -e "s|__BUILT_AT__|$BUILT_AT|g" "$ARTIFACT_DIR/index.html"
+      - rm -f "$ARTIFACT_DIR/index.html.bak"
+      - |
+        cat > "$ARTIFACT_DIR/build-metadata.json" << META
+        {
+          "service": "$SERVICE_NAME",
+          "release": "$USMS_RELEASE",
+          "builtAt": "$BUILT_AT",
+          "buildId": "${CODEBUILD_BUILD_ID:-local}",
+          "sourceVersion": "${CODEBUILD_RESOLVED_SOURCE_VERSION:-local}"
+        }
+        META
+      - cp config/service.json "$ARTIFACT_DIR/service.json"
+      - IMAGE_URI="${IMAGE_URI:-public.ecr.aws/nginx/nginx:stable-alpine}"
+      - |
+        python3 -c '
+        import json, sys
+        uri, out = sys.argv[1], sys.argv[2]
+        name = json.load(open("config/service.json"))["container"]
+        json.dump([{"name": name, "imageUri": uri}], open(out + "/imagedefinitions.json", "w"))
+        ' "$IMAGE_URI" "$ARTIFACT_DIR"
+      - echo "imagedefinitions.json -> $(cat "$ARTIFACT_DIR/imagedefinitions.json")"
+
+  post_build:
+    commands:
+      - echo "--- post_build ---"
+      - |
+        set +e
+        bash tests/smoke.sh
+        echo "$?" > .smoke-rc
+        set -e
+        test "$(cat .smoke-rc)" -eq 0
+      - ls -l "$ARTIFACT_DIR"
+      - cat "$ARTIFACT_DIR/build-metadata.json"
+    finally:
+      - |
+        mkdir -p "$ARTIFACT_DIR"
+        printf 'release=%s tests_exit=%s at=%s\n' \
+          "$(tr -d '[:space:]' < VERSION)" \
+          "$(cat .smoke-rc 2>/dev/null || echo not-run)" \
+          "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$ARTIFACT_DIR/build-summary.txt"
+        cat "$ARTIFACT_DIR/build-summary.txt"
+
+artifacts:
+  base-directory: dist
+  files:
+    - '**/*'
+
+cache:
+  paths: []

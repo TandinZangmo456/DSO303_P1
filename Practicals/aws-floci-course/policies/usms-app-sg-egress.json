@@ -1,0 +1,14 @@
+[
+  { "IpProtocol": "tcp", "FromPort": 443, "ToPort": 443,
+    "PrefixListIds": [ { "PrefixListId": "pl-63a5400a", "Description": "S3 via the gateway endpoint (transcripts)" } ] },
+  { "IpProtocol": "tcp", "FromPort": 443, "ToPort": 443,
+    "IpRanges": [ { "CidrIp": "0.0.0.0/0", "Description": "HTTPS to AWS endpoints (STS, SSM, package mirrors) - narrow to interface endpoints on real AWS" } ] },
+  { "IpProtocol": "tcp", "FromPort": 80, "ToPort": 80,
+    "UserIdGroupPairs": [ { "GroupId": "sg-67f11047b7ab80db0", "Description": "The enrolment API, through the ALB only" } ] },
+  { "IpProtocol": "tcp", "FromPort": 5432, "ToPort": 5432,
+    "UserIdGroupPairs": [ { "GroupId": "sg-a830ce8edd05f8060", "Description": "PostgreSQL on the data tier" } ] },
+  { "IpProtocol": "udp", "FromPort": 53, "ToPort": 53,
+    "IpRanges": [ { "CidrIp": "10.0.0.2/32", "Description": "DNS to the VPC resolver (UDP first)" } ] },
+  { "IpProtocol": "tcp", "FromPort": 53, "ToPort": 53,
+    "IpRanges": [ { "CidrIp": "10.0.0.2/32", "Description": "DNS to the VPC resolver (TCP fallback for large answers)" } ] }
+]
